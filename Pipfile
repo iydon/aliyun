@@ -6,6 +6,7 @@ name = "pypi"
 [packages]
 aliyun-python-sdk-core = "*"
 oss2 = "*"
+ffmpeg-python = "*"
 
 [dev-packages]
 ipython = "*"
