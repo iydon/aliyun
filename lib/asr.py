@@ -23,6 +23,13 @@ class ASR:
         cls._appkey = app_key
         return cls
 
+    @classmethod
+    def from_backup(cls, path: Path) -> 'ASR':
+        data = json.loads(p.Path(path).read_text())
+        self = cls(data['url'])
+        self._data = data['data']
+        return self
+
     def __init__(self, url: str) -> None:
         self._url = url
         self._data = None
@@ -31,7 +38,7 @@ class ASR:
     def data(self) -> t.Dict[str, t.Any]:
         return self._data
 
-    def upload(self) -> t.Option[str]:
+    def upload(self) -> t.Optional[str]:
         request = self._request(post=True)
         task = {
             'appkey': self._appkey, 'file_link': self._url, 'version': '4.0',
@@ -59,13 +66,42 @@ class ASR:
             except (ServerException, ClientException) as e:
                 print(e)
 
-    def to_srt(self, path: Path, channel_id: int = 0) -> None:
-        data = filter(lambda x: x['ChannelId']==channel_id, self._data)
+    def to(self, *paths: Path, channel_id: int = 0) -> 'ASR':
+        for path in map(self._path, paths):
+            {
+                '.srt': self.to_srt,
+                '.txt': self.to_txt,
+                '.backup': self.to_backup,
+            }[path.suffix](path, channel_id)
+        return self
+
+    def to_srt(self, path: Path, channel_id: int = 0) -> 'ASR':
+        data = filter(lambda x: x['ChannelId']==channel_id, self._data['Result']['Sentences'])
         pattern = '{h:02}:{m:02}:{s:02},{ms:03}'
-        with open(str(path), 'w') as f:
+        with open(self._path(path), 'w') as f:
             for ith, item in enumerate(sorted(data, key=lambda x: x['BeginTime'])):
                 start, end = (self._time(item[k], pattern) for k in ('BeginTime', 'EndTime'))
                 f.write(f'{ith}\n{start} --> {end}\n{item["Text"]}\n\n')
+        return self
+
+    def to_txt(self, path: Path, channel_id: int = 0) -> 'ASR':
+        self._path(path).write_text(
+            '\n'.join(
+                sentence['Text']
+                for sentence in self._data['Result']['Sentences']
+                if sentence['ChannelId'] == channel_id
+            )
+        )
+        return self
+
+    def to_backup(self, path: Path, channel_id: int = 0) -> 'ASR':
+        self._path(path).write_text(
+            json.dumps({
+                'url': self._url,
+                'data': self._data,
+            }, ensure_ascii=False)
+        )
+        return self
 
     def _request(self, post: bool = True) -> CommonRequest:
         request = CommonRequest()
@@ -84,3 +120,8 @@ class ASR:
 
         ms, s, m, h = f(microsecond)
         return pattern.format(ms=ms, s=s, m=m, h=h)
+
+    def _path(self, path: Path) -> p.Path:
+        path = p.Path(path)
+        path.parent.mkdir(parents=True, exist_ok=True)
+        return path

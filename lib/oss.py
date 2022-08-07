@@ -35,9 +35,11 @@ class OSS:
 
     def upload(self) -> 'OSS':
         self._bucket.put_object_from_file(self._name, str(self._path))
+        return self
 
     def delete(self) -> 'OSS':
         self._bucket.delete_object(self._name)
+        return self
 
     @property
     def url(self) -> str:
