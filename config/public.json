@@ -1,0 +1,14 @@
+{
+    "asr": {
+        "app_key": "{app_key}"
+    },
+    "auth": {
+        "access_key_id": "{access_key_id}",
+        "access_key_secret": "{access_key_secret}"
+    },
+    "oss": {
+        "endpoint": "{endpoint}",
+        "bucket_name": "{bucket_name}",
+        "bucket_domain": "{bucket_domain}"
+    }
+}
