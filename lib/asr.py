@@ -67,12 +67,13 @@ class ASR:
                 print(e)
 
     def to(self, *paths: Path, channel_id: int = 0) -> 'ASR':
+        mapper = {
+            f'.{attr[3:]}': getattr(self, attr)
+            for attr in dir(self)
+            if attr.startswith('to_')
+        }
         for path in map(self._path, paths):
-            {
-                '.srt': self.to_srt,
-                '.txt': self.to_txt,
-                '.backup': self.to_backup,
-            }[path.suffix](path, channel_id)
+            mapper[path.suffix](path, channel_id)
         return self
 
     def to_srt(self, path: Path, channel_id: int = 0) -> 'ASR':
