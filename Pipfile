@@ -10,7 +10,6 @@ ffmpeg-python = "*"
 
 [dev-packages]
 ipython = "*"
-black = "*"
 
 [requires]
 python_version = "3.8"
