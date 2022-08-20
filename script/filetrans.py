@@ -14,10 +14,10 @@ config = json.loads(next(filter(lambda p: p.exists(), paths)).read_text())
 ASR.register(**config['auth'], **config['asr'])
 OSS.register(**config['auth'], **config['oss'])
 
+for src in p.Path('data', 'filetrans').iterdir():
+    if src.is_file() and not (src.parent/src.stem).exists():
+        print(f'Path: {src}')
 
-class api:
-    @staticmethod
-    def doit(src: p.Path) -> None:
         dst = src.parent / f'{src.stem}.wav'
         ffmpeg \
             .input(src.as_posix()) \
@@ -27,23 +27,14 @@ class api:
             ) \
             .run()
 
-        oss = OSS(dst)
-        oss.upload()
-        asr = ASR(oss.url)
-        task_id = asr.upload()
-        print(f'{task_id = }')
-        asr.polling(task_id)
-        asr.to(
-            src.parent / src.stem / 'main.srt',
-            src.parent / src.stem / 'main.txt',
-            src.parent / src.stem / 'main.backup',
-        )
+        with OSS(dst) as oss:
+            ASR(oss.url) \
+                .upload() \
+                .polling() \
+                .to(
+                    src.parent / src.stem / 'main.srt',
+                    src.parent / src.stem / 'main.txt',
+                    src.parent / src.stem / 'main.backup',
+                )
+
         dst.unlink()
-        oss.delete()
-
-
-if __name__ == '__main__':
-    for path in p.Path('data', 'filetrans').iterdir():
-        if path.is_file() and not (path.parent/path.stem).exists():
-            print(f'{path = }')
-            api.doit(path)

@@ -1,3 +1,6 @@
+__all__ = ['OSS']
+
+
 import hashlib
 import pathlib as p
 import typing as t
@@ -9,6 +12,8 @@ Path = t.Union[str, p.Path]
 
 
 class OSS:
+    Self = __qualname__
+
     _bucket = None
     _domain = None
 
@@ -27,23 +32,23 @@ class OSS:
         self._path = p.Path(path).absolute()
         self._name = self._md5(str(self._path)) + self._path.suffix
 
-    def __enter__(self) -> 'OSS':
+    def __enter__(self) -> Self:
         return self.upload()
 
     def __exit__(self, type, value, traceback) -> None:
         self.delete()
 
-    def upload(self) -> 'OSS':
-        self._bucket.put_object_from_file(self._name, str(self._path))
-        return self
-
-    def delete(self) -> 'OSS':
-        self._bucket.delete_object(self._name)
-        return self
-
     @property
     def url(self) -> str:
         return f'https://{self._domain}/{self._name}'
+
+    def upload(self) -> Self:
+        self._bucket.put_object_from_file(self._name, str(self._path))
+        return self
+
+    def delete(self) -> Self:
+        self._bucket.delete_object(self._name)
+        return self
 
     def _md5(self, string: str) -> str:
         return hashlib.md5(string.encode()).hexdigest()

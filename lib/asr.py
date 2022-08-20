@@ -1,3 +1,6 @@
+__all__ = ['ASR']
+
+
 import json
 import pathlib as p
 import time
@@ -12,6 +15,8 @@ Path = t.Union[str, p.Path]
 
 
 class ASR:
+    Self = __qualname__
+
     _client = None
     _appkey = None
 
@@ -24,7 +29,7 @@ class ASR:
         return cls
 
     @classmethod
-    def from_backup(cls, path: Path) -> 'ASR':
+    def from_backup(cls, path: Path) -> Self:
         data = json.loads(p.Path(path).read_text())
         self = cls(data['url'])
         self._data = data['data']
@@ -33,12 +38,17 @@ class ASR:
     def __init__(self, url: str) -> None:
         self._url = url
         self._data = None
+        self._task_id = None
 
     @property
-    def data(self) -> t.Dict[str, t.Any]:
+    def data(self) -> t.Optional[t.Dict[str, t.Any]]:
         return self._data
 
-    def upload(self) -> t.Optional[str]:
+    @property
+    def task_id(self) -> t.Optional[str]:
+        return self._task_id
+
+    def upload(self) -> Self:
         request = self._request(post=True)
         task = {
             'appkey': self._appkey, 'file_link': self._url, 'version': '4.0',
@@ -48,13 +58,16 @@ class ASR:
         try:
             response = json.loads(self._client.do_action_with_exception(request))
             if response['StatusText'] == 'SUCCESS':
-                return response['TaskId']
+                self._task_id = response['TaskId']
+                print(f'TaskID: {self._task_id}')
+                return self
         except (ServerException, ClientException) as e:
             print(e)
 
-    def polling(self, task_id: str, delay: int = 10) -> 'ASR':
+    def polling(self, delay: int = 10) -> Self:
+        assert self._task_id is not None
         request = self._request(post=False)
-        request.add_query_param('TaskId', task_id)
+        request.add_query_param('TaskId', self._task_id)
         # 提交录音文件识别结果查询请求
         while True:
             try:
@@ -66,7 +79,7 @@ class ASR:
             except (ServerException, ClientException) as e:
                 print(e)
 
-    def to(self, *paths: Path, channel_id: int = 0) -> 'ASR':
+    def to(self, *paths: Path, channel_id: int = 0) -> Self:
         mapper = {
             f'.{attr[3:]}': getattr(self, attr)
             for attr in dir(self)
@@ -76,7 +89,7 @@ class ASR:
             mapper[path.suffix](path, channel_id)
         return self
 
-    def to_srt(self, path: Path, channel_id: int = 0) -> 'ASR':
+    def to_srt(self, path: Path, channel_id: int = 0) -> Self:
         data = filter(lambda x: x['ChannelId']==channel_id, self._data['Result']['Sentences'])
         pattern = '{h:02}:{m:02}:{s:02},{ms:03}'
         with open(self._path(path), 'w') as f:
@@ -85,7 +98,7 @@ class ASR:
                 f.write(f'{ith}\n{start} --> {end}\n{item["Text"]}\n\n')
         return self
 
-    def to_txt(self, path: Path, channel_id: int = 0) -> 'ASR':
+    def to_txt(self, path: Path, channel_id: int = 0) -> Self:
         self._path(path).write_text(
             '\n'.join(
                 sentence['Text']
@@ -95,7 +108,7 @@ class ASR:
         )
         return self
 
-    def to_backup(self, path: Path, channel_id: int = 0) -> 'ASR':
+    def to_backup(self, path: Path, channel_id: int = 0) -> Self:
         self._path(path).write_text(
             json.dumps({
                 'url': self._url,
