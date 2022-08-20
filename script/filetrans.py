@@ -43,7 +43,7 @@ class api:
 
 
 if __name__ == '__main__':
-    for path in p.Path('data').iterdir():
+    for path in p.Path('data', 'filetrans').iterdir():
         if path.is_file() and not (path.parent/path.stem).exists():
             print(f'{path = }')
             api.doit(path)
