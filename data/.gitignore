@@ -1,2 +1,5 @@
 filetrans/*
 !filetrans/demo.mp3
+
+tts/*
+!tts/demo.txt

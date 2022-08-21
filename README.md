@@ -6,3 +6,4 @@
 | 产品 | 脚本 |
 | --- | --- |
 | [录音文件识别](https://help.aliyun.com/document_detail/90726.html) | [filetrans.py](script/filetrans.py) |
+| [语音合成](https://help.aliyun.com/document_detail/84425.html) | [tts.py](script/tts.py) |
