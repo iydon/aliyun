@@ -6,6 +6,9 @@
         "access_key_id": "{access_key_id}",
         "access_key_secret": "{access_key_secret}"
     },
+    "nls": {
+        "app_key": "{app_key}"
+    },
     "oss": {
         "endpoint": "{endpoint}",
         "bucket_name": "{bucket_name}",
