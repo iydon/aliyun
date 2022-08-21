@@ -21,5 +21,6 @@ for src in p.Path('data', 'tts').iterdir():
         directory.mkdir(parents=True, exist_ok=True)
 
         for ith, line in enumerate(src.read_text().splitlines()):
-            if line:
-                nls.tts(line, directory/f'{ith+1}.{format}')
+            path = directory / f'{ith+1}.{format}'
+            if line and not path.exists():
+                nls.tts(line, path)
